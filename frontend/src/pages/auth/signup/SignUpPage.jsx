@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { toast } from "react-hot-toast";
 
 import XSvg from "../../../components/svgs/X";
 
@@ -8,7 +7,8 @@ import { MdOutlineMail } from "react-icons/md";
 import { FaUser } from "react-icons/fa";
 import { MdPassword } from "react-icons/md";
 import { MdDriveFileRenameOutline } from "react-icons/md";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const SignUpPage = () => {
 	const [formData, setFormData] = useState({
@@ -18,32 +18,37 @@ const SignUpPage = () => {
 		password: "",
 	});
 
-	const {mutate, isError, isPending, error}= useMutation({
-		mutationFn:async({email,username,fullName,password})=>{
+	const queryClient = useQueryClient();
+
+	const { mutate, isError, isPending, error } = useMutation({
+		mutationFn: async ({ email, username, fullName, password }) => {
 			try {
-				const res = await fetch("/api/auth/signup",{
-					method:"POST",
-					headers:{
-						"Content-Type":"application/json",
+				const res = await fetch("/api/auth/signup", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
 					},
-					body:JSON.stringify({email,username,fullName,password}),
+					body: JSON.stringify({ email, username, fullName, password }),
 				});
+
 				const data = await res.json();
-			    if(!res.ok) throw new Error(data.error || "Failed to create account");
+				if (!res.ok) throw new Error(data.error || "Failed to create account");
 				console.log(data);
 				return data;
 			} catch (error) {
-				console.log(error);
+				console.error(error);
 				throw error;
 			}
 		},
-		onSuccess:()=>{
+		onSuccess: () => {
 			toast.success("Account created successfully");
+
+			queryClient.invalidateQueries({ queryKey: ["authUser"] });
 		},
 	});
 
 	const handleSubmit = (e) => {
-		e.preventDefault(); //page won't reload
+		e.preventDefault(); // page won't reload
 		mutate(formData);
 	};
 
@@ -54,7 +59,7 @@ const SignUpPage = () => {
 	return (
 		<div className='max-w-screen-xl mx-auto flex h-screen px-10'>
 			<div className='flex-1 hidden lg:flex items-center  justify-center'>
-				<XSvg className=' lg:w-2/3 fill-white' />
+				<XSvg className='lg:w-2/3 fill-white' />
 			</div>
 			<div className='flex-1 flex flex-col justify-center items-center'>
 				<form className='lg:w-2/3  mx-auto md:mx-20 flex gap-4 flex-col' onSubmit={handleSubmit}>
