@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
 
+// models
 import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
 
@@ -68,14 +69,16 @@ export const getSuggestedUsers = async (req, res) => {
 		const users = await User.aggregate([
 			{
 				$match: {
-					_id: { $ne: userId },  //not equal to the current user
+					_id: { $ne: userId },
 				},
 			},
-			{ $sample: { size: 10 } }, // randomly sample 10 users
+			{ $sample: { size: 10 } },
 		]);
 
-		const filteredUsers = users.filter( (user) => !usersFollowedByMe.following.includes(user._id));	  
-        const suggestedUsers = filteredUsers.slice(0, 4);
+		// 1,2,3,4,5,6,
+		const filteredUsers = users.filter((user) => !usersFollowedByMe.following.includes(user._id));
+		const suggestedUsers = filteredUsers.slice(0, 4);
+
 		suggestedUsers.forEach((user) => (user.password = null));
 
 		res.status(200).json(suggestedUsers);
@@ -111,11 +114,10 @@ export const updateUser = async (req, res) => {
 		}
 
 		if (profileImg) {
-			//if user already has a profile image, delete it from cloudinary
 			if (user.profileImg) {
 				await cloudinary.uploader.destroy(user.profileImg.split("/").pop().split(".")[0]);
 			}
-            //upload new profile image to cloudinary
+
 			const uploadedResponse = await cloudinary.uploader.upload(profileImg);
 			profileImg = uploadedResponse.secure_url;
 		}
